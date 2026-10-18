@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PLAN TITLE</title>
+<!--
+  plan-kit: copy this file, fill the sections, restyle the :root variables to the product's brand.
+  Every element with class="pick" and data-key / data-name / data-kind gets Want / Maybe / No
+  buttons and a notes box injected automatically. Kinds: option | core | extra | question.
+  Set data-plan on <body> to "<repo>-<issue>-v1" so saved picks never collide between plans.
+-->
+<style>
+:root{
+  --bg:#f7f7f5; --card:#ffffff; --line:#e5e4df; --ink:#111; --ink-2:#4f4e4a; --muted:#7c7b75;
+  --brand:#2a78d6; --brand-soft:#e7f0fc; --radius:14px; --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+  --want:#0ca30c; --maybe:#c98500; --no:#d03b3b;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font)}
+header.toc{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.toc .in{max-width:1180px;margin:0 auto;padding:10px 22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+header.toc b{white-space:nowrap}
+header.toc nav{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+header.toc nav a{color:var(--ink-2);text-decoration:none;padding:4px 9px;border-radius:7px;font-size:13.5px}
+header.toc nav a:hover{background:var(--card)}
+#saveChip{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+#saveChip.ok{color:var(--want);border-color:color-mix(in srgb,var(--want) 40%,transparent)}
+#saveChip.bad{color:var(--no);border-color:color-mix(in srgb,var(--no) 40%,transparent)}
+main{max-width:1180px;margin:0 auto;padding:26px 22px 120px}
+section{margin:0 0 48px}
+h1{font-size:30px;letter-spacing:-.02em;margin:4px 0 8px}
+h2{font-size:22px;margin:0 0 6px}
+.sub{color:var(--ink-2);max-width:860px;margin:0 0 16px}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.kpi .v{font-size:28px;font-weight:700}.kpi .l{color:var(--ink-2);font-size:13px}
+.two{grid-template-columns:1fr 1fr}
+@media (max-width:980px){.two{grid-template-columns:1fr}}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin:0 4px 4px 0;color:var(--ink-2)}
+.tag.rec{background:var(--brand-soft);border-color:var(--brand);color:var(--ink)}
+.pick{position:relative}
+.pick .head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.pick .key{font:600 12px ui-monospace,monospace;color:var(--muted)}
+.pick .body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;margin-top:10px}
+@media (max-width:980px){.pick .body{grid-template-columns:1fr}}
+.pick .mock{background:#f0efeb;border-radius:12px;padding:14px;display:grid;place-items:center;min-height:120px;overflow:auto}
+.pick.marked-want{border-color:color-mix(in srgb,var(--want) 55%,transparent)}
+.pick.marked-maybe{border-color:color-mix(in srgb,var(--maybe) 55%,transparent)}
+.pick.marked-no{opacity:.72}
+.pk-ctl{display:flex;gap:10px;align-items:flex-start;margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;flex-wrap:wrap}
+.pk-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+.pk-seg button{appearance:none;border:0;border-right:1px solid var(--line);background:var(--card);font:inherit;font-size:13px;padding:6px 12px;cursor:pointer;color:var(--ink-2)}
+.pk-seg button:last-child{border-right:0}
+.pk-seg button[aria-pressed="true"][data-v="want"]{background:var(--want);color:#fff}
+.pk-seg button[aria-pressed="true"][data-v="maybe"]{background:var(--maybe);color:#fff}
+.pk-seg button[aria-pressed="true"][data-v="no"]{background:var(--no);color:#fff}
+.pk-ctl textarea,#generalNotes{flex:1;min-width:240px;min-height:36px;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font:inherit;font-size:13.5px;resize:vertical;background:var(--card);color:var(--ink)}
+.phone{width:300px;height:620px;border-radius:38px;background:#111;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.phone .screen{width:100%;height:100%;border-radius:30px;background:#fff;overflow:auto;position:relative}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 12px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--ink)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+#exportText{width:100%;min-height:220px;font:12.5px/1.5 ui-monospace,monospace;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--ink)}
+.progress{display:flex;gap:14px;flex-wrap:wrap;color:var(--ink-2);font-size:13.5px;margin-bottom:10px}
+table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;font-size:14px}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+</style>
+</head>
+<body data-plan="REPO-ISSUE-v1">
+<header class="toc"><div class="in">
+  <b>PLAN TITLE</b>
+  <nav><a href="#summary">Summary</a><a href="#today">Today</a><a href="#approach">Approach</a><a href="#changes">Changes</a><a href="#extras">Extras</a><a href="#ships">How it ships</a><a href="#questions">Questions</a><a href="#picks">Your picks</a></nav>
+  <span id="pickCount" style="font-size:13px;color:var(--muted)"></span>
+  <span id="saveChip">…</span>
+</div></header>
+<main>
+
+<section id="summary">
+  <div style="color:var(--muted);font-size:13px">REPO · #ISSUE · DATE</div>
+  <h1>PLAN TITLE</h1>
+  <p class="sub">One-paragraph goal. Mark every card Want / Maybe / No, add notes, then use <b>Copy my picks</b> at the bottom and paste it back. That export is what gets built.</p>
+  <div class="grid kpis" id="kpis"></div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="card"><h2 style="font-size:16px">In scope</h2><ul><li>…</li></ul><h2 style="font-size:16px">Out of scope</h2><ul><li>…</li></ul></div>
+    <div class="card"><h2 style="font-size:16px">Done when</h2><ul><li>…</li></ul><h2 style="font-size:16px">Hard constraints kept</h2><ul><li>…</li></ul></div>
+  </div>
+</section>
+
+<section id="today"><h2>Today</h2><p class="sub">Real screenshots, or a code/flow map for non-UI work.</p></section>
+
+<section id="approach"><h2>Approach</h2><p class="sub">Genuinely different options. Want one.</p>
+  <div class="grid two">
+    <article class="card pick" data-kind="option" data-key="O1" data-name="Option A: …">
+      <div class="head"><span class="key">O1</span><h3 style="margin:0">Option A: …</h3><span class="tag rec">Recommended</span></div>
+      <p>What it is, the trade-off, and why it fits.</p>
+    </article>
+  </div>
+</section>
+
+<section id="changes"><h2>Changes</h2><p class="sub">Core changes needed to meet the goal, each with a high-fidelity mock or prototype.</p>
+  <div class="grid">
+    <article class="card pick" data-kind="core" data-key="C1" data-name="…">
+      <div class="head"><span class="key">C1</span><h3 style="margin:0">…</h3><span class="tag">S</span><span class="tag">OTA · JS-only</span></div>
+      <div class="body">
+        <div><p><b>What:</b> …</p><p><b>Why:</b> …</p><p style="color:var(--muted);font-size:13px">Files: …</p></div>
+        <div class="mock"><div class="phone"><div class="screen"><!-- prototype --></div></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="extras"><h2>Extras</h2><p class="sub">Optional. Each is checked against the hard constraints.</p><div class="grid two"></div></section>
+
+<section id="ships"><h2>How it ships</h2><div class="card"><ol><li>…</li></ol></div></section>
+
+<section id="questions"><h2>Open questions</h2><p class="sub">Your call. My recommendation is stated on each card; Want = agree with it, No = do something else (say what in the note).</p><div class="grid"></div></section>
+
+<section id="picks"><h2>Your picks</h2>
+  <div class="card">
+    <div class="progress" id="progress"></div>
+    <textarea id="generalNotes" placeholder="Anything else (optional)…" style="width:100%"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
+      <button class="btn primary" id="copyBtn">Copy my picks</button>
+      <button class="btn" id="dlBtn">Download picks.md</button>
+      <button class="btn" id="clearBtn">Clear picks</button>
+    </div>
+    <textarea id="exportText" readonly></textarea>
+  </div>
+</section>
+</main>
+
+<script>
+(() => {
+  const KEY = 'plan-picks:' + (document.body.dataset.plan || location.pathname);
+  let ok = true, S = {picks: {}, notes: {}, general: ''};
+  try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); localStorage.setItem(KEY + ':probe', '1'); } catch (e) { ok = false; }
+  const chip = document.getElementById('saveChip');
+  chip.className = ok ? 'ok' : 'bad';
+  chip.textContent = ok ? 'Saved in this browser' : 'Not saving here: copy before you close';
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} update(); };
+  const picks = [...document.querySelectorAll('.pick[data-key]')];
+  const KINDS = {option: 'Approach', core: 'Core changes', extra: 'Extras', question: 'Open questions'};
+
+  picks.forEach(el => {
+    const k = el.dataset.key;
+    const ctl = document.createElement('div'); ctl.className = 'pk-ctl';
+    ctl.innerHTML = `<div class="pk-seg" role="group" aria-label="Pick for ${k}">
+        <button data-v="want">Want</button><button data-v="maybe">Maybe</button><button data-v="no">No</button></div>
+      <textarea placeholder="Notes for ${k} (optional)…"></textarea>`;
+    el.appendChild(ctl);
+    const ta = ctl.querySelector('textarea'); ta.value = S.notes[k] || '';
+    ta.addEventListener('input', () => { S.notes[k] = ta.value; save(); });
+    ctl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      S.picks[k] = S.picks[k] === b.dataset.v ? '' : b.dataset.v;
+      if (S.picks[k] === 'want' && el.dataset.kind === 'option')   // one option at a time
+        picks.filter(p => p.dataset.kind === 'option' && p !== el && S.picks[p.dataset.key] === 'want').forEach(p => S.picks[p.dataset.key] = '');
+      save();
+    }));
+  });
+  const gn = document.getElementById('generalNotes'); gn.value = S.general || '';
+  gn.addEventListener('input', () => { S.general = gn.value; save(); });
+
+  function md() {
+    const L = [`# Picks: ${document.title}`, ''];
+    for (const [kind, label] of Object.entries(KINDS)) {
+      const xs = picks.filter(p => (p.dataset.kind || 'core') === kind); if (!xs.length) continue;
+      L.push(`## ${label}`);
+      xs.forEach(p => { const k = p.dataset.key, v = S.picks[k]; const n = (S.notes[k] || '').trim();
+        L.push(`- ${k} ${p.dataset.name}: ${v ? v.toUpperCase() : '(unmarked)'}${n ? ' · ' + n.replace(/\n+/g, ' / ') : ''}`); });
+      L.push('');
+    }
+    if ((S.general || '').trim()) L.push('## Other notes', S.general.trim());
+    return L.join('\n');
+  }
+  function update() {
+    const c = {want: 0, maybe: 0, no: 0};
+    picks.forEach(p => { const v = S.picks[p.dataset.key]; p.classList.remove('marked-want', 'marked-maybe', 'marked-no'); if (v) { c[v]++; p.classList.add('marked-' + v); }
+      p.querySelectorAll('.pk-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); });
+    const done = c.want + c.maybe + c.no;
+    document.getElementById('pickCount').textContent = `${done}/${picks.length} marked`;
+    document.getElementById('progress').innerHTML = `<span><b>${done}</b> of ${picks.length} marked</span><span>Want <b>${c.want}</b></span><span>Maybe <b>${c.maybe}</b></span><span>No <b>${c.no}</b></span>`;
+    document.getElementById('exportText').value = md();
+  }
+  const kp = document.getElementById('kpis');
+  if (kp && !kp.children.length) {
+    const n = k => picks.filter(p => p.dataset.kind === k).length;
+    kp.innerHTML = [[picks.length, 'items to decide'], [n('core'), 'core changes'], [n('extra'), 'extras'], [n('question'), 'open questions']]
+      .map(([v, l]) => `<div class="card kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+  }
+  document.getElementById('copyBtn').onclick = async () => {
+    const t = md(), ta = document.getElementById('exportText');
+    try { await navigator.clipboard.writeText(t); chip.textContent = 'Copied'; return; } catch (e) {}
+    ta.focus(); ta.select();
+    try { if (document.execCommand('copy')) { chip.textContent = 'Copied'; return; } } catch (e) {}
+    chip.textContent = 'Text selected: press ⌘C / Ctrl+C';
+  };
+  document.getElementById('dlBtn').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md()], {type: 'text/markdown'})); a.download = 'picks.md'; a.click(); };
+  document.getElementById('clearBtn').onclick = () => { if (confirm('Clear all picks and notes?')) { S = {picks: {}, notes: {}, general: ''}; picks.forEach(p => { const t = p.querySelector('.pk-ctl textarea'); if (t) t.value = ''; }); gn.value = ''; save(); } };
+  update();
+})();
+</script>
+</body>
+</html>

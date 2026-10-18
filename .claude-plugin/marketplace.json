@@ -1,0 +1,16 @@
+{
+  "name": "planning-skills",
+  "owner": {
+    "name": "razilzul",
+    "url": "https://github.com/razilzul"
+  },
+  "description": "Plan-first Claude Code skills: mark-up HTML plans, redesign proposals, plain-words summaries, safe checkout cleanup and requirement interviews.",
+  "plugins": [
+    {
+      "name": "planning-skills",
+      "source": "./",
+      "description": "Five plan-first skills: start, redesign, simple, tidy and grill-me.",
+      "category": "productivity"
+    }
+  ]
+}

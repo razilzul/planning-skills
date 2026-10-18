@@ -1,0 +1,14 @@
+{
+  "name": "planning-skills",
+  "displayName": "Planning Skills",
+  "version": "1.0.0",
+  "description": "Plan-first skills: an HTML plan you mark up before any code (/start), a screen redesign proposal with a clickable demo (/redesign), plain-words explanations (/simple), a safe git checkout cleanup (/tidy) and a decision-tree interview (/grill-me).",
+  "author": {
+    "name": "razilzul",
+    "url": "https://github.com/razilzul"
+  },
+  "homepage": "https://github.com/razilzul/planning-skills",
+  "repository": "https://github.com/razilzul/planning-skills",
+  "license": "MIT",
+  "keywords": ["planning", "skills", "ux", "redesign", "git", "requirements"]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "Reach the right answer before acting"
+  default_prompt: "Use $grill-me to clarify this request before implementation."

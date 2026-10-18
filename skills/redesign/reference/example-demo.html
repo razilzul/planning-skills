@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Example: settings redesign demo</title>
+<!--
+  Minimal reference for the /redesign interactive demo. The app ("Notes", a settings screen)
+  is made up and every number is illustrative. It exists only to show the code patterns:
+  data tables at the top, one state object from fresh(), render() + renderOverlay(),
+  one delegated [data-act] click handler, a PIN gate, live preview switches,
+  and a "Your picks" section with autosave and a Markdown export.
+  A real demo uses the project's own tokens and asset images and is much richer.
+-->
+<style>
+:root{--bg:#f4f4f2;--card:#fff;--line:#e3e2dd;--ink:#141414;--ink2:#55544f;--brand:#3a6fd8;--want:#108a10;--maybe:#b87a00;--no:#c63a3a;--r:14px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font)}
+.top{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--card);padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.stage{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;max-width:1180px;margin:0 auto;padding:24px 20px}
+@media (max-width:980px){.stage{grid-template-columns:1fr}}
+.phoneWrap{transform-origin:top left}
+.phone{position:relative;width:376px;height:800px;border-radius:44px;background:#111;padding:12px;box-shadow:0 12px 34px rgba(0,0,0,.2)}
+.screen{position:relative;width:100%;height:100%;border-radius:34px;background:#fafaf8;overflow:hidden;display:flex;flex-direction:column}
+.status{display:flex;justify-content:space-between;padding:12px 22px 4px;font-size:13px;font-weight:600}
+.hdr{padding:8px 20px 12px;font-size:24px;font-weight:700}
+.body{flex:1;overflow:auto;padding:0 14px 20px}
+.group{background:#fff;border-radius:12px;margin:0 0 14px;border:1px solid var(--line)}
+.gl{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);margin:10px 6px 6px}
+.row{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;text-align:left;cursor:pointer;min-height:48px}
+.row:last-child{border-bottom:0}
+.row .t{flex:1}.row .s{color:var(--ink2);font-size:13px}
+.tog{width:42px;height:26px;border-radius:13px;background:#cfcfca;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.tog.on{background:var(--brand)}.tog.on::after{left:19px}
+.overlay:empty{display:none}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end}
+.sheet{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:20px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pad button{padding:14px;font:inherit;font-size:18px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+.dots{letter-spacing:8px;font-size:22px;text-align:center}
+.err{color:var(--no);font-size:13px;text-align:center;min-height:18px}
+.toast{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:999px;font-size:13px}
+.side .card,.picks .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.side ol{padding-left:20px}.side li{margin-bottom:6px}
+.compare img{max-width:300px;border:1px solid var(--line);border-radius:12px}
+.picks{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+.pk{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-top:8px}
+.pk textarea,#gen{flex:1;min-width:220px;min-height:34px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px}
+.pk .seg button[data-v="want"][aria-pressed="true"]{background:var(--want)}
+.pk .seg button[data-v="maybe"][aria-pressed="true"]{background:var(--maybe)}
+.pk .seg button[data-v="no"][aria-pressed="true"]{background:var(--no)}
+#chip{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+#chip.ok{color:var(--want)}#chip.bad{color:var(--no)}
+#out{width:100%;min-height:200px;font:12.5px/1.5 ui-monospace,monospace;border:1px solid var(--line);border-radius:10px;padding:10px}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;font-size:14px}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>Notes: settings redesign</b>
+  <div class="seg" id="dirSeg"></div>
+  <label><input type="checkbox" id="cmp"> Compare with today</label>
+  <button class="btn" id="reset">Reset demo</button>
+  <span id="chip"></span>
+</div>
+
+<div class="stage">
+  <div>
+    <div class="phoneWrap" id="wrap"><div class="phone"><div class="screen"><div id="app" style="display:contents"></div><div class="overlay" id="overlay"></div></div></div></div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+
+<div class="picks">
+  <h2>Your picks</h2>
+  <p>Mark each change Want / Maybe / No and add notes. The export at the bottom is what gets built: copy it and paste it back.</p>
+  <div class="card"><b>Direction</b><div class="pk"><div class="seg" id="dirPick"></div><textarea id="dirNote" placeholder="Notes on the direction (optional)"></textarea></div></div>
+  <div class="card"><b>Which rows need the PIN</b><table id="pinTable"></table></div>
+  <div id="cards"></div>
+  <div class="card"><textarea id="gen" placeholder="Anything else (optional)" style="width:100%"></textarea>
+    <div style="display:flex;gap:8px;margin:10px 0"><button class="btn primary" id="copy">Copy my picks</button><button class="btn" id="clear">Clear picks</button></div>
+    <textarea id="out" readonly></textarea></div>
+</div>
+
+<script>
+// ---------- data tables ----------
+const A = './';                       // asset root, relative to this file (unused here: icons are inline SVG)
+const DEMO_PIN = '1234';
+const DIRS = {
+  A: {title: 'A. Tidy the list', sum: 'Same single list, grouped and relabelled.', try: [['Open Backup (PIN gated)', 'pin'], ['Turn on Sync', 'sync']],
+      ch: ['Rows grouped into Account, Notes, Privacy', 'Backup moved behind the PIN']},
+  B: {title: 'B. Split by task', sum: 'Daily toggles first, account and legal last.', try: [['Open Backup (PIN gated)', 'pin'], ['See the export row', 'export']],
+      ch: ['Daily toggles at the top', 'Export row added', 'Legal links in one group']},
+};
+const CORE = [
+  {key: 'C1', name: 'Group the rows', what: 'Three labelled groups instead of one long list.', why: 'Illustrative: 11 rows today, users scan past the one they need.'},
+  {key: 'C2', name: 'PIN before Backup', what: 'Restoring a backup asks for the PIN first.', why: 'A restore overwrites notes; it should not be one tap away.'},
+];
+const FEATS = [
+  {key: 'export', name: 'Export notes', what: 'One row that shares all notes as a file.', why: 'Works with no backend: uses the share sheet.', def: true},
+  {key: 'textsize', name: 'Text size', what: 'A text-size row with a live preview.', why: 'Accessibility: respects user preference.', def: false},
+];
+const PINROWS = [['backup', 'Backup and restore', 'PIN'], ['sync', 'Sync', 'Open'], ['privacy', 'Privacy policy', 'Open']];
+
+// ---------- state ----------
+const fresh = () => ({dir: S0.dir, sheet: null, pinFor: null, entry: '', err: '', sync: false,
+  feat: Object.fromEntries(FEATS.map(f => [f.key, S0.feat[f.key] ?? f.def]))});
+const S0 = {dir: 'A', feat: {}};
+let S = fresh();
+const $ = (q, el = document) => el.querySelector(q);
+
+// ---------- picks (autosaved) ----------
+const KEY = 'example-settings-demo-picks-v1';
+let P = {dir: '', dirNote: '', v: {}, n: {}, pin: {}, gen: ''}, saving = true;
+try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); localStorage.setItem(KEY + ':probe', '1'); } catch (e) { saving = false; }
+const chip = $('#chip');
+chip.className = saving ? 'ok' : 'bad';
+chip.textContent = saving ? 'Saved in this browser' : 'Not saving here: copy before you close';
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} exportMd(); };
+const pinPolicy = k => P.pin[k] || PINROWS.find(r => r[0] === k)[2];
+
+// ---------- rendering ----------
+const svg = d => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a6fd8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const IC = {lock: svg('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'), share: svg('<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 14v5h14v-5"/>')};
+const row = (act, label, sub = '', right = '›') => `<button class="row" data-act="${act}"><span class="t">${label}${sub ? `<div class="s">${sub}</div>` : ''}</span>${right}</button>`;
+const tog = on => `<span class="tog ${on ? 'on' : ''}"></span>`;
+
+function render() {
+  const sync = row('sync', 'Sync', 'Illustrative: last synced 2 min ago', tog(S.sync));
+  const size = S.feat.textsize ? row('textsize', 'Text size', 'Medium') : '';
+  const exp = S.feat.export ? row('export', IC.share + ' Export notes') : '';
+  const backup = row('backup', (pinPolicy('backup') === 'PIN' ? IC.lock + ' ' : '') + 'Backup and restore');
+  const privacy = row('privacy', 'Privacy policy');
+  const groups = S.dir === 'A'
+    ? [['Account', sync + backup], ['Notes', size + exp], ['Privacy', privacy]]
+    : [['Every day', sync + size], ['Your data', exp + backup], ['About', privacy]];
+  $('#app').innerHTML = `<div class="status"><span>9:41</span><span>100%</span></div><div class="hdr">Settings</div>
+    <div class="body">${groups.filter(g => g[1]).map(([l, h]) => `<div class="gl">${l}</div><div class="group">${h}</div>`).join('')}</div>`;
+  renderOverlay();
+  renderSide();
+}
+function renderOverlay() {
+  if (S.sheet === 'pin') {
+    $('#overlay').innerHTML = `<div class="sheet"><b>Enter PIN</b> <span class="s">(demo PIN ${DEMO_PIN})</span>
+      <div class="dots">${'●'.repeat(S.entry.length)}${'○'.repeat(4 - S.entry.length)}</div><div class="err">${S.err}</div>
+      <div class="pad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k => k === '' ? '<span></span>' : `<button data-act="key" data-k="${k}">${k}</button>`).join('')}</div>
+      <button class="btn" data-act="close" style="margin-top:10px;width:100%">Cancel</button></div>`;
+  } else if (S.sheet === 'backup') {
+    $('#overlay').innerHTML = `<div class="sheet"><b>Backup and restore</b><p class="s">Stand-in, unchanged.</p><button class="btn" data-act="close">Done</button></div>`;
+  } else $('#overlay').innerHTML = '';
+}
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  $('.screen').appendChild(t); setTimeout(() => t.remove(), 1800);
+}
+function open(key, unlocked = false) {
+  if (!unlocked && pinPolicy(key) === 'PIN') { S.sheet = 'pin'; S.pinFor = key; S.entry = ''; S.err = ''; }
+  else if (key === 'backup') S.sheet = 'backup';
+  else if (key === 'privacy') toast('Opens the privacy policy');
+  else if (key === 'sync') S.sync = !S.sync;
+  render();
+}
+
+// one delegated handler for everything inside the phone
+document.querySelector('.screen').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'key') {
+    const k = b.dataset.k;
+    S.entry = k === '⌫' ? S.entry.slice(0, -1) : (S.entry + k).slice(0, 4); S.err = '';
+    if (S.entry.length === 4) {
+      if (S.entry === DEMO_PIN) { const k = S.pinFor; S.sheet = null; S.pinFor = null; return open(k, true); }
+      else { S.entry = ''; S.err = 'Wrong PIN, try again'; }
+    }
+    return render();
+  }
+  if (act === 'close') { S.sheet = null; return render(); }
+  if (act === 'export') return toast('Opens the share sheet with notes.txt');
+  if (act === 'textsize') return toast('Opens the text-size picker');
+  open(act);
+});
+
+// ---------- side panel ----------
+function renderSide() {
+  const d = DIRS[S.dir];
+  $('#side').innerHTML = `<div class="card"><h2 style="margin:0">${d.title}</h2><p>${d.sum}</p>
+    <b>Try this</b><ol>${d.try.map(([t, a]) => `<li>${t} <button class="btn" data-show="${a}">Show me</button></li>`).join('')}</ol>
+    <b>What changed from today</b><ul>${d.ch.map(c => `<li>${c}</li>`).join('')}</ul>
+    <b>Preview switches</b>${FEATS.map(f => `<div><label><input type="checkbox" data-feat="${f.key}" ${S.feat[f.key] ? 'checked' : ''}> ${f.name}</label></div>`).join('')}</div>
+    ${$('#cmp').checked ? '<div class="card compare"><b>Today</b><p class="s">Put the real screenshot here, e.g. shots/01-settings.png, at the same scale.</p></div>' : ''}`;
+}
+$('#side').addEventListener('click', e => {
+  const b = e.target.closest('[data-show]'); if (!b) return;
+  const a = b.dataset.show;
+  if (a === 'export') { S.feat.export = true; render(); $('[data-act="export"]').scrollIntoView({block: 'center'}); }
+  else open(a === 'pin' ? 'backup' : a);
+});
+$('#side').addEventListener('change', e => { const k = e.target.dataset.feat; if (k) { S.feat[k] = e.target.checked; S0.feat[k] = e.target.checked; render(); } });
+
+// ---------- top bar ----------
+function setDir(d) { S.dir = S0.dir = d; render(); paintSeg(); }
+function paintSeg() {
+  $('#dirSeg').innerHTML = Object.keys(DIRS).map(d => `<button data-d="${d}" aria-pressed="${S.dir === d}">${d}</button>`).join('');
+  $('#dirPick').innerHTML = [...Object.keys(DIRS), 'Mix'].map(d => `<button data-d="${d}" aria-pressed="${P.dir === d}">${d}</button>`).join('');
+}
+$('#dirSeg').addEventListener('click', e => { const d = e.target.dataset.d; if (d) setDir(d); });
+$('#dirPick').addEventListener('click', e => { const d = e.target.dataset.d; if (!d) return; P.dir = P.dir === d ? '' : d; if (DIRS[d]) setDir(d); paintSeg(); save(); });
+$('#cmp').addEventListener('change', renderSide);
+$('#reset').onclick = () => { S = fresh(); render(); };
+function fit() { const s = Math.min(1, Math.max(0.6, (innerHeight - 120) / 800)); $('#wrap').style.transform = `scale(${s})`; $('#wrap').style.height = 800 * s + 'px'; $('#wrap').style.width = 376 * s + 'px'; }
+addEventListener('resize', fit);
+
+// ---------- picks section ----------
+function buildPicks() {
+  $('#dirNote').value = P.dirNote || '';
+  $('#dirNote').oninput = e => { P.dirNote = e.target.value; save(); };
+  $('#pinTable').innerHTML = '<tr><th>Row</th><th>Proposed</th><th>Your call</th></tr>' + PINROWS.map(([k, l, def]) =>
+    `<tr><td>${l}</td><td>${def}</td><td><select data-pin="${k}"><option>PIN</option><option>Open</option></select> <span class="s" data-chg="${k}"></span></td></tr>`).join('');
+  $('#pinTable').querySelectorAll('select').forEach(s => { s.value = pinPolicy(s.dataset.pin); s.onchange = () => { P.pin[s.dataset.pin] = s.value; save(); render(); }; });
+  $('#cards').innerHTML = [...CORE, ...FEATS].map(it => `<div class="card"><b>${it.name}</b> <span class="s">${it.key}</span><p>${it.what} <i>Why:</i> ${it.why}</p>
+    <div class="pk"><div class="seg" data-pick="${it.key}">${['want', 'maybe', 'no'].map(v => `<button data-v="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
+    <textarea data-note="${it.key}" placeholder="Notes (optional)"></textarea></div></div>`).join('');
+  $('#cards').querySelectorAll('[data-pick]').forEach(g => g.addEventListener('click', e => { const v = e.target.dataset.v; if (!v) return; const k = g.dataset.pick; P.v[k] = P.v[k] === v ? '' : v; save(); }));
+  $('#cards').querySelectorAll('[data-note]').forEach(t => { t.value = P.n[t.dataset.note] || ''; t.oninput = () => { P.n[t.dataset.note] = t.value; save(); }; });
+  $('#gen').value = P.gen || ''; $('#gen').oninput = e => { P.gen = e.target.value; save(); };
+}
+function exportMd() {
+  document.querySelectorAll('[data-pick]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', P.v[g.dataset.pick] === b.dataset.v)));
+  PINROWS.forEach(([k, , def]) => { const el = $(`[data-chg="${k}"]`); if (el) el.textContent = pinPolicy(k) !== def ? 'changed' : ''; });
+  const line = it => `- ${it.name}: ${P.v[it.key] ? P.v[it.key].toUpperCase() : '(unmarked)'}${(P.n[it.key] || '').trim() ? ' · ' + P.n[it.key].trim().replace(/\n+/g, ' / ') : ''}`;
+  const L = ['# Picks: Notes settings redesign', '', `Direction: ${P.dir || '(unmarked)'}${P.dirNote ? ' · ' + P.dirNote : ''}`, '', '## PIN rows',
+    ...PINROWS.map(([k, l, def]) => `- ${l}: ${pinPolicy(k)}${pinPolicy(k) !== def ? ' (CHANGED from proposal)' : ''}`), '',
+    '## Core changes', ...CORE.map(line), '', '## Extra features', ...FEATS.map(line)];
+  if ((P.gen || '').trim()) L.push('', '## Other notes', P.gen.trim());
+  $('#out').value = L.join('\n');
+}
+$('#copy').onclick = async () => {
+  const t = $('#out').value;
+  try { await navigator.clipboard.writeText(t); chip.textContent = 'Copied'; return; } catch (e) {}
+  $('#out').focus(); $('#out').select();
+  try { if (document.execCommand('copy')) { chip.textContent = 'Copied'; return; } } catch (e) {}
+  chip.textContent = 'The text is selected: press Cmd+C / Ctrl+C';
+};
+$('#clear').onclick = () => { if (confirm('Clear all picks and notes?')) { P = {dir: '', dirNote: '', v: {}, n: {}, pin: {}, gen: ''}; buildPicks(); paintSeg(); save(); render(); } };
+
+buildPicks(); paintSeg(); render(); fit(); exportMd();
+</script>
+</body>
+</html>
